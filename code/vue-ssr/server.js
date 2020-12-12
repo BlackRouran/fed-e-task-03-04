@@ -2,34 +2,25 @@ const Vue = require('vue')
 const express = require('express')
 const fs = require('fs')
 
-const renderer = require('vue-server-renderer').createRenderer({
-    template: fs.readFileSync('./index.template.html', 'utf-8')
-})
+const serverBundle = require('./dist/vue-ssr-server-bundle.json') 
+const template = fs.readFileSync('./index.template.html', 'utf-8')
+// 客户端打包清单
+const clientManifest = require('./dist/vue-ssr-client-manifest.json')
 
+const renderer = require('vue-server-renderer').createBundleRenderer(serverBundle, { template, clientManifest })
 
 const server = express()
-
+server.use('/dist', express.static('./dist')) 
 server.get('/', (req, res) => {
-    const app = new Vue({
-        template: `
-        <div id="app">{{msg}}</div>
-         `,
-         data: {
-             msg: '就会看看环境'
-         }
-    })
-
-    renderer.renderToString(app, (err, html) => {
-        if(err) {
-            return res.status(500).end('Internal Server Error')
-        }
-        res.setHeader('Content-Type', 'text/html; charse t=utf8')
-        res.end(html)
-    })
+  renderer.renderToString({
+    title: '拉勾教育',
+    meta: ` <meta name="description" content="拉勾教育"> ` 
+  }, (err, html) => { 
+    if (err) {
+      return res.status(500).end('Internal Server Error.') 
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf8')
+                res.end(html) 
+  }) 
 })
-server.listen(3000, () => {
-    console.log('server is running port 3000')
-})
-
-
-
+server.listen(3000, () => { console.log('server running at port 3000.') })
